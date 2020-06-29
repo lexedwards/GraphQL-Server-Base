@@ -1,0 +1,24 @@
+{
+  "name": "nexus-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nexus dev",
+    "build": "nexus build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "argon2": "^0.26.2",
+    "jsonwebtoken": "^8.5.1",
+    "nexus": "^0.24.2",
+    "nexus-plugin-jwt-auth": "^1.2.0",
+    "nexus-plugin-prisma": "^0.10.0",
+    "nexus-plugin-shield": "^0.1.4"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^8.5.0"
+  }
+}
