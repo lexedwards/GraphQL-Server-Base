@@ -27,7 +27,8 @@ scalar Json
 
 type Mutation {
   deleteOneUser(email: String!, password: String!): UserPayload
-  signUp(email: String!, name: String!, password: String!, phone: String): AuthPayload
+  loginUser(email: String!, password: String!): UserPayload
+  signupUser(email: String!, name: String!, password: String!, phone: String): AuthPayload
   updateUser(currentPassword: String!, email: String, name: String, password: String, phone: String): UserPayload
 }
 
