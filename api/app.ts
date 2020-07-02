@@ -4,6 +4,7 @@ import { auth } from 'nexus-plugin-jwt-auth'
 import { shield } from 'nexus-plugin-shield'
 import { rules } from './permissions'
 import redis from './redis'
+import { RedisClient } from 'redis'
 
 use(prisma({
   features: { crud: true }
@@ -17,4 +18,12 @@ use(shield({
   rules
 }))
 
-schema.addToContext(() => { return { redis } })
+schema.addToContext(_req => {
+  return { redis }
+})
+
+declare global {
+  interface NexusContext {
+    redis: RedisClient
+  }
+}

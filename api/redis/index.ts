@@ -1,6 +1,6 @@
-import * as redis from 'redis'
+import { createClient } from 'redis'
 
-const client = redis.createClient();
+const client = createClient();
 
 client.on('error', error => { return { field: 'redis', message: error } })
 

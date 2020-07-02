@@ -4,7 +4,7 @@
 
 type AuthPayload {
   error: Error
-  token: String
+  tokens: Tokens
   user: User
 }
 
@@ -28,6 +28,7 @@ scalar Json
 type Mutation {
   deleteOneUser(email: String!, password: String!): UserPayload
   loginUser(email: String!, password: String!): UserPayload
+  reauthenticate(refreshToken: String!): UserPayload
   signupUser(email: String!, name: String!, password: String!, phone: String): AuthPayload
   updateUser(currentPassword: String!, email: String, name: String, password: String, phone: String): UserPayload
 }
@@ -62,6 +63,11 @@ input StringFilter {
   not: String
   notIn: [String!]
   startsWith: String
+}
+
+type Tokens {
+  auth: String
+  refresh: String
 }
 
 type User {

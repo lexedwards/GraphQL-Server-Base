@@ -1,10 +1,12 @@
 import { schema } from 'nexus'
 import { hashPassword, verifyPassword } from '../utils/hash'
-import { sign, getUserId } from '../utils/token'
+import { sign, getUserId, getUserIdByRefresh } from '../utils/token'
 
 /**
  *  Users 
  *  Create, Login, Update, Delete
+ * 
+ * Extra - ReAuthenticate
  */
 
 schema.extendType({
@@ -18,12 +20,12 @@ schema.extendType({
         phone: schema.stringArg(),
         password: schema.stringArg({ nullable: false }),
       },
-      async resolve(_root, { name, email, phone, password }, ctx) {
+      async resolve(_root, { name, email, phone, password }, { db, redis }) {
         try {
           const hashed = await hashPassword(password)
-          const userExists = Boolean(await ctx.db.user.findOne({ where: { email } }))
+          const userExists = Boolean(await db.user.findOne({ where: { email } }))
           if (userExists) throw { field: email, message: "Email already in use" }
-          const user = await ctx.db.user.create({
+          const user = await db.user.create({
             data: {
               name,
               email,
@@ -31,8 +33,10 @@ schema.extendType({
               password: hashed
             }
           })
+          const tokens = await sign(user.id)
+          redis.set(user.id, tokens.refresh)
           return {
-            token: sign(user.id),
+            tokens,
             user
           }
         } catch (error) {
@@ -46,15 +50,42 @@ schema.extendType({
         email: schema.stringArg({ nullable: false }),
         password: schema.stringArg({ nullable: false })
       },
-      async resolve(_root, { email, password }, ctx) {
+      async resolve(_root, { email, password }, { db, redis }) {
         try {
-          const isUser = await ctx.db.user.findOne({ where: { email } })
+          const isUser = await db.user.findOne({ where: { email } })
           if (!isUser) throw { field: 'user', message: 'No User Found' }
           const validPassword = await verifyPassword(isUser.password, password)
           if (!validPassword) throw { field: 'password', message: 'Invalid Email / Password' }
+          const tokens = await sign(isUser.id)
+          redis.set(isUser.id, tokens.refresh)
           return {
-            token: sign(isUser.id),
+            tokens,
             user: isUser
+          }
+        } catch (error) {
+          return { error }
+        }
+      }
+    })
+    t.field('reauthenticate', {
+      type: 'UserPayload',
+      args: {
+        refreshToken: schema.stringArg({ nullable: false })
+      },
+      async resolve(_root, { refreshToken }, { redis, db }) {
+        try {
+          const id = await getUserIdByRefresh(refreshToken)
+          if (!id) throw { field: 'token', message: 'Invalid Token' }
+          redis.get(id, (err, res) => {
+            if (err || res !== refreshToken) throw { field: 'token', message: 'Invalid Token' }
+          })
+          const user = await db.user.findOne({ where: { id } })
+          if (!user) throw { field: 'user', message: 'No User Found' }
+          const tokens = await sign(id)
+          redis.set(id, tokens.refresh)
+          return {
+            tokens,
+            user
           }
         } catch (error) {
           return { error }
